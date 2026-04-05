@@ -84,7 +84,10 @@ dnf install mysql -y &>> $LOGFILE
 
 VALIDATE $? "install MySQL client"
 
-mysql -h 172.31.67.18 -uroot -pRoboShop@1 < /app/schema/shipping.sql &>> $LOGFILE
+mysql -h 172.31.74.198 -u root -pRoboShop@1 < app-user.sql
+mysql -h 172.31.74.198 -u root -pRoboShop@1 < schema.sql
+mysql -h 172.31.74.198 -u root -pRoboShop@1 < master-data.sql &>> $LOGFILE
+
 
 VALIDATE $? "loading shipping data"
 
