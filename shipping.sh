@@ -86,7 +86,7 @@ VALIDATE $? "install MySQL client"
 
 mysql -h 172.31.67.18 -u root -pRoboShop@1 < app-user.sql
 mysql -h 172.31.67.18 -u root -pRoboShop@1 < schema.sql
-mysql -h 172.31.67.18 -u root -pRoboShop@1 < master-data.sql &>> $LOGFILE
+mysql -h 172.31.67.18 -u root -pRoboShop@1 < master-data.sql 
 
 
 VALIDATE $? "loading shipping data"
