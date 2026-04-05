@@ -1,4 +1,8 @@
+new
 #!/bin/bash
+
+# Get the script name without paths for the log file
+SCRIPT_NAME=$(basename "$0")
 
 ID=$(id -u)
 R="\e[31m"
@@ -7,50 +11,54 @@ Y="\e[33m"
 N="\e[0m"
 
 TIMESTAMP=$(date +%F-%H-%M-%S)
-LOGFILE="/tmp/$0-$TIMESTAMP.log"
-#exec &>$LOGFILE
+LOGFILE="/tmp/${SCRIPT_NAME}-${TIMESTAMP}.log"
 
-echo "script stareted executing at $TIMESTAMP" &>> $LOGFILE
+echo "Script started executing at $TIMESTAMP" &>> $LOGFILE
 
+# Function to validate previous command execution
 VALIDATE(){
     if [ $1 -ne 0 ]
     then
         echo -e "$2 ... $R FAILED $N"
+        echo -e "$R Check the logs at $LOGFILE for details. $N"
         exit 1
     else
         echo -e "$2 ... $G SUCCESS $N"
     fi
 }
 
+# Ensure script is run as root
 if [ $ID -ne 0 ]
 then
     echo -e "$R ERROR:: Please run this script with root access $N"
-    exit 1 # you can give other than 0
+    exit 1 
 else
     echo "You are root user"
-fi # fi means reverse of if, indicating condition end
+fi 
 
+# Reset any previous redis modules to avoid conflicts
+dnf module reset redis -y &>> $LOGFILE
+VALIDATE $? "Resetting default Redis modules"
 
-dnf module list redis
+# Enable Redis 6 module
+dnf module enable redis:6 -y &>> $LOGFILE
+VALIDATE $? "Enabling Redis 6 module"
 
-VALIDATE $? "Installing redis release"
-
-dnf module enable redis:6 -y
-
-VALIDATE $? "enabling redis"
-
-dnf install redis -y
-
+# Install Redis
+dnf install redis -y &>> $LOGFILE
 VALIDATE $? "Installing Redis"
 
-sed -i 's/127.0.0.1/0.0.0.0/g' /etc/redis.conf &>> $LOGFILE
+# Allow remote connections (Changing bind address)
+# Note: Using a more specific sed command to avoid breaking other lines
+sed -i 's/^bind 127.0.0.1/bind 0.0.0.0/' /etc/redis.conf &>> $LOGFILE
+VALIDATE $? "Configuring Redis to allow remote connections"
 
-VALIDATE $? "allowing remote connections"
+# Enable Redis to start on boot
+systemctl enable redis &>> $LOGFILE
+VALIDATE $? "Enabling Redis service"
 
-systemctl enable redis
+# Start the Redis service
+systemctl start redis &>> $LOGFILE
+VALIDATE $? "Starting Redis service"
 
-VALIDATE $? "Enabled Redis"
-
-systemctl start redis
-
-VALIDATE $? "Started Redis"
+echo -e "$G Redis has been successfully installed and started! $N"
